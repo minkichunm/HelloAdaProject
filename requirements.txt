@@ -1,0 +1,5 @@
+Flask==3.0.3
+spacy==3.8.2
+
+# After installing dependencies, run this command to download the spaCy model:
+# python3 -m spacy download en_core_web_sm

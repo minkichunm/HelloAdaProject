@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Character Movement</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;  /* Center align items */
+            justify-content: center;  /* Center vertically */
+            height: 40vh;  /* Full height of the viewport */
+            margin: 0;  /* Remove default margin */
+            position: relative; /* Make body relative to position elements within */
+        }
+
+        #character {
+            position: absolute; /* Change to absolute positioning for better control */
+            left: 50%;        /* Start at the center */
+            top: 50vh;
+            width: 50px;
+            height: 50px;
+            background-color: red;
+            transform: translateX(-50%); /* Center the character */
+        }
+
+        /* Style for the command display */
+        #command-display {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 20px;
+            color: black;
+        }
+
+        /* Center the input and button */
+        .command-container {
+            display: flex;
+            align-items: center; /* Center align items */
+            margin-top: 20px; /* Add margin above */
+        }
+
+        /* Style for input and button */
+        input, button {
+            margin: 5px; /* Add margin between elements */
+            padding: 10px; /* Add padding for better appearance */
+            font-size: 16px; /* Increase font size */
+        }
+
+        /* Style for the toggle shape button */
+        .toggle-shape {
+            margin-top: 10px;
+            padding: 10px;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Move the Character!</h1>
+    
+    <div class="command-container">
+        <input type="text" id="command" placeholder="Enter a command (e.g., 'left', 'right', 'jump', 'change color')">
+        <button onclick="sendCommand()">Enter</button>
+    </div>
+    
+    <p>Enter a command (e.g., 'left', 'right', 'jump', 'change color')</p> <!-- Instruction below the heading -->
+    
+    <!-- Character to move -->
+    <div id="character"></div>
+
+    <!-- Element to display the command at the bottom -->
+    <div id="command-display"></div>
+
+    <!-- Button to toggle between rectangle and circle shape -->
+    <button class="toggle-shape" onclick="toggleShape()">Change Shape</button>
+
+    <!-- JavaScript for handling commands and moving the character -->
+    <script>
+        function sendCommand() {
+            let command = document.getElementById('command').value;
+            fetch('/process', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `command=${command}`
+            }).then(response => response.json())
+              .then(data => updateCharacter(data.action));
+        }
+        
+        let isJumping = false; // Flag to check if the character is jumping
+        let isRectangle = true; // Flag to track current shape
+
+        function updateCharacter(action) {
+            let character = document.getElementById('character');
+            let commandDisplay = document.getElementById('command-display'); // Get the element to display the command
+            
+            // Display the received action/command at the bottom of the screen
+            commandDisplay.innerText = "Command: " + action;
+            
+            // Get the current 'left' and 'top' positions as numbers
+            let currentLeft = parseInt(window.getComputedStyle(character).left, 10);
+            let currentTop = parseInt(window.getComputedStyle(character).top, 10);
+
+            // Define boundaries (modify these values as needed)
+            const leftBoundary = 0; // Left boundary
+            const rightBoundary = window.innerWidth - character.offsetWidth + 30; // Adjusted right boundary
+
+            if (action === "move_left") {
+                // Move left and ensure it stays within boundaries
+                if (currentLeft > leftBoundary) {
+                    character.style.left = Math.max(currentLeft - 10, leftBoundary) + "px";  // Move 10px left
+                }
+            } else if (action === "move_right") {
+                // Move right and ensure it stays within boundaries
+                if (currentLeft < rightBoundary) {
+                    character.style.left = Math.min(currentLeft + 10, rightBoundary) + "px";  // Move 10px right
+                }
+            } else if (action === "jump") {
+                // Jump only if not already jumping
+                if (!isJumping) {
+                    isJumping = true; // Set jumping flag to true
+                    character.style.top = (currentTop - 50) + "px"; // Move up (jump)
+                    
+                    setTimeout(() => {
+                        character.style.top = currentTop + "px"; // Fall back after jump
+                        isJumping = false; // Reset jumping flag after landing
+                    }, 500); // Adjust the duration of the jump as needed
+                }
+            } else if (action === "change_color") {
+                const colors = ["red", "blue", "orange", "black", "pink", "brown"];
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                character.style.backgroundColor = randomColor;
+            }
+        }
+
+        // Toggle Shape Function outside of updateCharacter
+        function toggleShape() {
+            let character = document.getElementById('character');
+
+            // Toggle the shape between rectangle and circle
+            if (isRectangle) {
+                character.style.borderRadius = "50%";  // Change to circle
+                isRectangle = false;
+            } else {
+                character.style.borderRadius = "0";  // Change back to rectangle
+                isRectangle = true;
+            }
+        }
+
+    </script>
+
+</body>
+</html>
